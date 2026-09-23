@@ -1,8 +1,10 @@
 import asyncio
+import ssl
 from urllib.parse import unquote
 from uuid import uuid4
 
 import aiohttp
+import certifi
 from flask import current_app
 
 from .constants import DISK_API_URL
@@ -47,7 +49,12 @@ async def upload_files(files):
     token = current_app.config['DISK_TOKEN']
     headers = {'Authorization': f'OAuth {token}'}
     timeout = aiohttp.ClientTimeout(total=120)
-    async with aiohttp.ClientSession(timeout=timeout) as session:
+    connector = aiohttp.TCPConnector(
+        ssl=ssl.create_default_context(cafile=certifi.where())
+    )
+    async with aiohttp.ClientSession(
+        timeout=timeout, connector=connector,
+    ) as session:
         results = await asyncio.gather(
             *(upload_file(session, file, headers) for file in files),
             return_exceptions=True,
