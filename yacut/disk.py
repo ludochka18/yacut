@@ -21,6 +21,10 @@ async def upload_file(session, file, headers):
         f'{DISK_API_URL}/upload', headers=headers,
         params={'path': path, 'overwrite': 'false'},
     ) as response:
+        if response.status in (401, 403):
+            raise DiskError(
+                'Проверьте DISK_TOKEN и права приложения Яндекс Диска.'
+            )
         response.raise_for_status()
         upload_url = (await response.json())['href']
     # Do not send the OAuth token to the temporary upload host.
@@ -41,10 +45,6 @@ async def upload_file(session, file, headers):
 
 async def upload_files(files):
     token = current_app.config['DISK_TOKEN']
-    if not token:
-        raise DiskError(
-            'Добавьте DISK_TOKEN в .env и перезапустите сервер.'
-        )
     headers = {'Authorization': f'OAuth {token}'}
     timeout = aiohttp.ClientTimeout(total=120)
     async with aiohttp.ClientSession(timeout=timeout) as session:

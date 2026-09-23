@@ -30,6 +30,9 @@ async def files_view():
             flash(str(error), 'danger')
         else:
             for file, result in zip(form.files.data, results):
+                if isinstance(result, DiskError):
+                    flash(str(result), 'danger')
+                    continue
                 if isinstance(result, Exception):
                     app.logger.warning('Disk upload failed: %s',
                                        type(result).__name__)

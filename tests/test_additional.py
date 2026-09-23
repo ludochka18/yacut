@@ -49,8 +49,11 @@ def test_files_empty(client):
     assert URLMap.query.count() == 0
 
 
-def test_files_missing_token(client, monkeypatch):
+def test_files_unauthorized(client, monkeypatch):
     monkeypatch.setitem(app.config, 'DISK_TOKEN', '')
+    upload = AsyncMock(return_value=[disk.DiskError(
+        'Проверьте DISK_TOKEN и права приложения Яндекс Диска.')])
+    monkeypatch.setattr('yacut.views.upload_files', upload)
     response = client.post('/files', data={
         'files': (BytesIO(b'hello'), 'test.txt')})
     assert response.status_code == 200
@@ -79,14 +82,16 @@ def test_partial_upload(client, monkeypatch):
         assert client.get('/' + item.short).location == item.original
 
 
-def test_concurrent_http_flow(default_app, monkeypatch):
-    monkeypatch.setitem(app.config, 'DISK_TOKEN', 'test-token')
+@pytest.mark.parametrize('token', ['', 'test-token'])
+def test_concurrent_http_flow(client, monkeypatch, token):
+    monkeypatch.setitem(app.config, 'DISK_TOKEN', token)
     calls = []
     active = 0
     peak = 0
 
     class Response:
         def __init__(self, body=None, headers=None):
+            self.status = 200
             self.body = body
             self.headers = headers or {}
 
@@ -119,7 +124,7 @@ def test_concurrent_http_flow(default_app, monkeypatch):
 
         def get(self, url, **kwargs):
             calls.append((url, kwargs))
-            assert kwargs['headers']['Authorization'] == 'OAuth test-token'
+            assert kwargs['headers']['Authorization'] == f'OAuth {token}'
             if url.endswith('/upload'):
                 return Response({'href': 'https://upload.example/file'})
             assert kwargs['params']['path'] == '/Apps/my file.txt'
@@ -140,6 +145,14 @@ def test_concurrent_http_flow(default_app, monkeypatch):
              if url.endswith('/upload')]
     assert len(set(paths)) == 2
     assert all(path.startswith('app:/') for path in paths)
+    response = client.post('/files', data={'files': [
+        (BytesIO(b'payload'), 'one.txt'),
+        (BytesIO(b'payload'), 'two.txt')]})
+    assert response.status_code == 200
+    assert URLMap.query.count() == 2
+    for item in URLMap.query.all():
+        assert f'http://localhost/{item.short}' in response.get_data(as_text=True)
+
 
 
 def test_csrf(client, monkeypatch):
