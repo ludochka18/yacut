@@ -1,12 +1,9 @@
 # YaCut
 
 Учебный сервис сокращения ссылок на Flask с REST API и асинхронной
-загрузкой нескольких файлов на Яндекс Диск через aiohttp.
-Каркас и исходные тесты: https://github.com/yandex-praktikum/yacut.
+загрузкой нескольких файлов на Яндекс Диск через aiohttp.Каркас и исходные тесты: https://github.com/yandex-praktikum/yacut.
 
 ## Запуск
-
-Проверено на Python 3.12. Рекомендуется Python 3.11–3.12.
 
 ```bash
 python3 -m venv venv
