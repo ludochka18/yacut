@@ -82,5 +82,3 @@ flake8 yacut settings.py
 - `yacut/error_handlers.py` — обработчики ошибок.
 - `yacut/templates/`, `yacut/static/` — шаблоны и статика.
 - `migrations/` — миграции базы данных.
-
-Для сдачи используйте архив исходников без `.env`, базы данных и venv.
