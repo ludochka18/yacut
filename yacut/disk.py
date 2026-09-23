@@ -30,7 +30,9 @@ async def upload_file(session, file, headers):
         response.raise_for_status()
         upload_url = (await response.json())['href']
     # Do not send the OAuth token to the temporary upload host.
-    async with session.put(upload_url, data=file.stream) as response:
+    # Python 3.9's SpooledTemporaryFile is not an aiohttp-supported IOBase.
+    # Send raw bytes so Werkzeug uploads work across supported Python versions.
+    async with session.put(upload_url, data=file.read()) as response:
         response.raise_for_status()
         location = response.headers.get('Location')
     if location:

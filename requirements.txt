@@ -33,5 +33,6 @@ WTForms==3.0.1
 zipp==3.18.1
 
 aiohttp==3.10.5
+yarl==1.9.9
 asgiref==3.8.1
 certifi==2026.7.22

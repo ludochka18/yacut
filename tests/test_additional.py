@@ -132,7 +132,7 @@ def test_concurrent_http_flow(client, monkeypatch, token):
 
         def put(self, url, **kwargs):
             assert 'headers' not in kwargs
-            assert kwargs['data'].read() == b'payload'
+            assert kwargs['data'] == b'payload'
             return Response(headers={'Location': '/disk/Apps/my%20file.txt'})
 
     monkeypatch.setattr(disk.aiohttp, 'ClientSession', Session)
