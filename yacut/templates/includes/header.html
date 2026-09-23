@@ -1,0 +1,6 @@
+<header class="bg-light shadow-sm">
+  <nav class="container nav nav-pills py-3" aria-label="Основная навигация">
+    <a class="nav-link {% if request.endpoint == 'index_view' %}active{% endif %}" href="{{ url_for('index_view') }}">Главная</a>
+    <a class="nav-link {% if request.endpoint == 'files_view' %}active{% endif %}" href="{{ url_for('files_view') }}">Загрузка файлов</a>
+  </nav>
+</header>

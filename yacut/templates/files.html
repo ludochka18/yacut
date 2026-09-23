@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Загрузка файлов — YaCut{% endblock %}
+{% block content %}
+<p class="text-center my-4">Загрузите файлы на Яндекс Диск и получите короткие ссылки</p>
+<div class="row justify-content-center">
+  <div class="col-12 col-md-8">
+    <form method="post" enctype="multipart/form-data">
+      {{ form.hidden_tag() }}
+      {% with field = form.files %}{% include 'includes/field.html' %}{% endwith %}
+      <p class="text-muted">Общий размер файлов — до 32 МБ.</p>
+      <button class="btn btn-primary" type="submit">Загрузить</button>
+    </form>
+    {% if links %}
+      <div class="table-responsive mt-4">
+        <table class="table"><thead><tr><th>Файл</th><th>Короткая ссылка</th></tr></thead>
+          <tbody>{% for filename, link in links %}
+            <tr><td>{{ filename }}</td><td><a href="{{ link }}">{{ link }}</a></td></tr>
+          {% endfor %}</tbody>
+        </table>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
