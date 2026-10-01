@@ -1,5 +1,6 @@
 import asyncio
 import ssl
+from http import HTTPStatus
 from urllib.parse import unquote
 from uuid import uuid4
 
@@ -23,7 +24,7 @@ async def upload_file(session, file, headers):
         f'{DISK_API_URL}/upload', headers=headers,
         params={'path': path, 'overwrite': 'false'},
     ) as response:
-        if response.status in (401, 403):
+        if response.status in (HTTPStatus.UNAUTHORIZED, HTTPStatus.FORBIDDEN):
             raise DiskError(
                 'Проверьте DISK_TOKEN и права приложения Яндекс Диска.'
             )
