@@ -1,28 +1,28 @@
 <!doctype html>
 <html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" href="{{ url_for('static', filename='img/fav/favicon.ico') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
-  <title>{% block title %}YaCut — укоротитель ссылок{% endblock %}</title>
-</head>
-<body class="d-flex flex-column min-vh-100">
-  {% include 'includes/header.html' %}
-  <main class="container my-5 px-4 flex-grow-1">
-    <h1 class="text-center"><span class="text-danger">Ya</span>Cut</h1>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% for category, message in messages %}
-        <div class="alert alert-{{ category }} mt-4" role="alert">{{ message }}</div>
-      {% endfor %}
-    {% endwith %}
-    {% if form is defined and form.csrf_token is defined %}
-      {% for error in form.csrf_token.errors %}
-        <p class="alert alert-danger">Обновите страницу и повторите отправку формы.</p>
-      {% endfor %}
-    {% endif %}
-    {% block content %}{% endblock %}
-  </main>
-  {% include 'includes/footer.html' %}
-</body>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="{{ url_for('static', filename='img/fav/favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <title>{% block title %}YaCut — укоротитель ссылок{% endblock %}</title>
+  </head>
+  <body class="d-flex flex-column min-vh-100">
+    {% include 'includes/header.html' %}
+    <main class="container my-5 px-4 flex-grow-1">
+      <h1 class="text-center"><span class="text-danger">Ya</span>Cut</h1>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} mt-4" role="alert">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+      {% if form is defined and form.csrf_token is defined %}
+        {% for error in form.csrf_token.errors %}
+          <p class="alert alert-danger">Обновите страницу и повторите отправку формы.</p>
+        {% endfor %}
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+    {% include 'includes/footer.html' %}
+  </body>
 </html>

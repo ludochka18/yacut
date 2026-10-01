@@ -1,21 +1,23 @@
 {% extends 'base.html' %}
+
 {% block content %}
-<p class="text-center my-4">Создайте короткую ссылку автоматически или предложите свой вариант</p>
-<div class="row justify-content-center">
-  <div class="col-12 col-md-8 col-lg-6">
-    <form method="post" novalidate>
-      {{ form.hidden_tag() }}
-      {% for field in (form.original_link, form.custom_id) %}
-        {% include 'includes/field.html' %}
-      {% endfor %}
-      {{ form.submit(class="btn btn-primary") }}
-    </form>
-    {% if short_link %}
-      <div class="text-center mt-4" role="status">
-        <h5>Ваша новая ссылка готова:</h5>
-        <a href="{{ short_link }}">{{ short_link }}</a>
-      </div>
-    {% endif %}
+  <p class="text-center my-4">Создайте короткую ссылку автоматически или предложите свой вариант</p>
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+      <form method="post" novalidate>
+        {{ form.hidden_tag() }}
+        {% for field in (form.original_link, form.custom_id) %}
+          {% include 'includes/field.html' %}
+        {% endfor %}
+        {{ form.submit(class="btn btn-primary") }}
+      </form>
+
+      {% if short_link %}
+        <div class="text-center mt-4" role="status">
+          <h5>Ваша новая ссылка готова:</h5>
+          <a href="{{ short_link }}">{{ short_link }}</a>
+        </div>
+      {% endif %}
+    </div>
   </div>
-</div>
 {% endblock %}
