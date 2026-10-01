@@ -10,7 +10,7 @@ from . import db
 from .constants import (
     ALPHABET, DUPLICATE_MESSAGE, INVALID_SHORT_MESSAGE,
     MAX_GENERATION_ATTEMPTS, MAX_SHORT_LENGTH,
-    MAX_URL_LENGTH, RESERVED_IDS, SHORT_ID_LENGTH,
+    MAX_URL_LENGTH, RESERVED_IDS, SHORT_ID_LENGTH, SHORT_ID_PATTERN,
 )
 
 
@@ -62,7 +62,8 @@ class URLMap(db.Model):
         validate_original(original)
         if custom_id is not None and custom_id != '':
             if (not isinstance(custom_id, str)
-                    or not re.fullmatch(r'[A-Za-z0-9]{1,16}', custom_id)):
+                    or len(custom_id) > MAX_SHORT_LENGTH
+                    or not re.fullmatch(SHORT_ID_PATTERN, custom_id)):
                 raise ValueError(INVALID_SHORT_MESSAGE)
             if custom_id in RESERVED_IDS or cls.get(custom_id):
                 raise ValueError(DUPLICATE_MESSAGE)

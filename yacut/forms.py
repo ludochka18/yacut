@@ -3,7 +3,7 @@ from flask_wtf.file import FileRequired, MultipleFileField
 from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired, Length, Optional, Regexp, URL
 
-from .constants import MAX_SHORT_LENGTH, MAX_URL_LENGTH
+from .constants import MAX_SHORT_LENGTH, MAX_URL_LENGTH, SHORT_ID_PATTERN
 
 
 class URLForm(FlaskForm):
@@ -14,7 +14,7 @@ class URLForm(FlaskForm):
     ])
     custom_id = StringField('Ваш вариант короткой ссылки', validators=[
         Optional(), Length(max=MAX_SHORT_LENGTH),
-        Regexp(r'^[A-Za-z0-9]+$', message='Только латинские буквы и цифры.'),
+        Regexp(SHORT_ID_PATTERN, message='Только латинские буквы и цифры.'),
     ])
     submit = SubmitField('Создать')
 
