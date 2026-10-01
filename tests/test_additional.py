@@ -195,3 +195,43 @@ def test_malformed_json(client):
                            content_type='application/json')
     assert response.status_code == 400
     assert 'message' in response.json
+
+
+@pytest.mark.parametrize('failure', ['validation', 'generation', 'database'])
+def test_file_link_failure_continues(client, monkeypatch, failure):
+    from sqlalchemy.exc import SQLAlchemyError
+
+    upload = AsyncMock(return_value=[
+        (f'{name}.txt', f'https://download.example/{name}')
+        for name in ('first', 'second', 'third')
+    ])
+    monkeypatch.setattr('yacut.views.upload_files', upload)
+    original_create = URLMap.create
+
+    def create(original, custom_id=None):
+        if original.endswith('/second'):
+            db.session.add(URLMap(original=original, short='pending'))
+            errors = {
+                'validation': ValueError,
+                'generation': RuntimeError,
+                'database': SQLAlchemyError,
+            }
+            raise errors[failure]('Internal error details')
+        return original_create(original, custom_id)
+
+    monkeypatch.setattr(URLMap, 'create', create)
+    response = client.post('/files', data={'files': [
+        (BytesIO(b'payload'), f'{name}.txt')
+        for name in ('first', 'second', 'third')
+    ]})
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert 'Не удалось создать короткую ссылку для second.txt' in html
+    assert 'Internal error details' not in html
+    assert URLMap.get('pending') is None
+    items = URLMap.query.all()
+    assert {item.original for item in items} == {
+        'https://download.example/first', 'https://download.example/third'
+    }
+    for item in items:
+        assert f'http://localhost/{item.short}' in html

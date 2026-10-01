@@ -1,6 +1,7 @@
 from flask import abort, flash, redirect, render_template
+from sqlalchemy.exc import SQLAlchemyError
 
-from . import app
+from . import app, db
 from .disk import DiskError, upload_files
 from .forms import FilesForm, URLForm
 from .models import URLMap, get_unique_short_id  # noqa: F401
@@ -41,7 +42,15 @@ async def files_view():
                           'danger')
                     continue
                 filename, download_url = result
-                item = URLMap.create(download_url)
+                try:
+                    item = URLMap.create(download_url)
+                except (ValueError, RuntimeError, SQLAlchemyError) as error:
+                    db.session.rollback()
+                    app.logger.warning('Short link creation failed: %s',
+                                       type(error).__name__)
+                    flash(f'Не удалось создать короткую ссылку для '
+                          f'{filename}. Повторите попытку.', 'danger')
+                    continue
                 links.append((filename, item.short_link))
     return render_template('files.html', form=form, links=links)
 
