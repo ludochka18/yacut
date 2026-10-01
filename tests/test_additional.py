@@ -6,8 +6,9 @@ from unittest.mock import AsyncMock
 import pytest
 from werkzeug.datastructures import FileStorage
 
-from yacut import app, disk
-from yacut.models import URLMap
+from yacut import app, db, disk
+from yacut.constants import MAX_GENERATION_ATTEMPTS, SHORT_ID_LENGTH
+from yacut.models import URLMap, get_unique_short_id
 
 
 @pytest.mark.parametrize('name', ['files', 'api', 'static'])
@@ -40,6 +41,33 @@ def test_collision_retry(client, monkeypatch):
     item = URLMap.create('https://example.com/second')
     assert item.short == 'bbbbbb'
     assert URLMap.get('aaaaaa').original.endswith('/first')
+
+
+def test_generation_exhausted(client, monkeypatch):
+    URLMap.create('https://example.com/first', 'aaaaaa')
+    calls = 0
+
+    def always_collide(alphabet):
+        nonlocal calls
+        calls += 1
+        return 'a'
+
+    monkeypatch.setattr('yacut.models.secrets.choice', always_collide)
+    with pytest.raises(RuntimeError, match='Не удалось сгенерировать'):
+        get_unique_short_id()
+    assert calls == MAX_GENERATION_ATTEMPTS * SHORT_ID_LENGTH
+    assert URLMap.query.count() == 1
+
+
+def test_save_collision_rolls_back(client, monkeypatch):
+    URLMap.create('https://example.com/first', 'aaaaaa')
+    monkeypatch.setattr('yacut.models.get_unique_short_id', lambda: 'aaaaaa')
+    with pytest.raises(ValueError, match='уже существует'):
+        URLMap.create('https://example.com/second')
+    assert db.session.is_active
+    assert URLMap.query.count() == 1
+    assert URLMap.get('aaaaaa').original.endswith('/first')
+    assert URLMap.create('https://example.com/third', 'third').short == 'third'
 
 
 def test_files_empty(client):

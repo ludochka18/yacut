@@ -1,6 +1,7 @@
 import string
 
 SHORT_ID_LENGTH = 6
+MAX_GENERATION_ATTEMPTS = 100
 MAX_SHORT_LENGTH = 16
 MAX_URL_LENGTH = 2048
 ALPHABET = string.ascii_letters + string.digits
