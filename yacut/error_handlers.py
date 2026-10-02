@@ -24,27 +24,36 @@ def error_response(code, message):
     return render_template('error.html', code=code, message=message), code
 
 
-@app.errorhandler(404)
+@app.errorhandler(HTTPStatus.NOT_FOUND)
 def not_found(error):
-    return error_response(404, 'Страница не найдена')
+    return error_response(HTTPStatus.NOT_FOUND, 'Страница не найдена')
 
 
-@app.errorhandler(500)
+@app.errorhandler(HTTPStatus.INTERNAL_SERVER_ERROR)
 def internal_error(error):
     db.session.rollback()
-    return error_response(500, 'Внутренняя ошибка сервера')
+    return error_response(
+        HTTPStatus.INTERNAL_SERVER_ERROR, 'Внутренняя ошибка сервера'
+    )
 
 
-@app.errorhandler(413)
+@app.errorhandler(HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
 def too_large(error):
-    return error_response(413, 'Общий размер файлов превышает 32 МБ')
+    return error_response(
+        HTTPStatus.REQUEST_ENTITY_TOO_LARGE,
+        'Общий размер файлов превышает 32 МБ',
+    )
 
 
-@app.errorhandler(405)
+@app.errorhandler(HTTPStatus.METHOD_NOT_ALLOWED)
 def method_not_allowed(error):
-    return error_response(405, 'Метод не поддерживается')
+    return error_response(
+        HTTPStatus.METHOD_NOT_ALLOWED, 'Метод не поддерживается'
+    )
 
 
 @app.errorhandler(CSRFError)
 def csrf_error(error):
-    return error_response(400, 'Обновите страницу и отправьте форму ещё раз')
+    return error_response(
+        HTTPStatus.BAD_REQUEST, 'Обновите страницу и отправьте форму ещё раз'
+    )
