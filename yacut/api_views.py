@@ -5,6 +5,7 @@ from flask import jsonify, request
 from . import app
 from .error_handlers import InvalidAPIUsage
 from .models import URLMap
+from .exceptions import ShortIDGenerationError
 
 
 @app.route('/api/id/', methods=['POST'])
@@ -18,6 +19,10 @@ def create_short_link():
         raise InvalidAPIUsage('"url" является обязательным полем!')
     try:
         item = URLMap.create(data['url'], data.get('custom_id'))
+    except ShortIDGenerationError as error:
+        raise InvalidAPIUsage(
+            str(error), HTTPStatus.SERVICE_UNAVAILABLE
+        ) from error
     except ValueError as error:
         raise InvalidAPIUsage(str(error)) from error
     return jsonify(item.to_dict()), HTTPStatus.CREATED

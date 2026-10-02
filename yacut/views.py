@@ -4,7 +4,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from . import app, db
 from .disk import DiskError, upload_files
 from .forms import FilesForm, URLForm
-from .models import URLMap, get_unique_short_id  # noqa: F401
+from .models import URLMap
+from .exceptions import ShortIDGenerationError
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -15,7 +16,7 @@ def index_view():
         try:
             item = URLMap.create(form.original_link.data, form.custom_id.data)
             short_link = item.short_link
-        except ValueError as error:
+        except (ValueError, ShortIDGenerationError) as error:
             flash(str(error), 'danger')
     return render_template('index.html', form=form, short_link=short_link)
 
@@ -44,7 +45,8 @@ async def files_view():
                 filename, download_url = result
                 try:
                     item = URLMap.create(download_url)
-                except (ValueError, RuntimeError, SQLAlchemyError) as error:
+                except (ValueError, ShortIDGenerationError,
+                        SQLAlchemyError) as error:
                     db.session.rollback()
                     app.logger.warning('Short link creation failed: %s',
                                        type(error).__name__)

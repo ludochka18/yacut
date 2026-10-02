@@ -8,7 +8,8 @@ from werkzeug.datastructures import FileStorage
 
 from yacut import app, db, disk
 from yacut.constants import MAX_GENERATION_ATTEMPTS, SHORT_ID_LENGTH
-from yacut.models import URLMap, get_unique_short_id
+from yacut.models import URLMap
+from yacut.exceptions import ShortIDGenerationError
 
 
 @pytest.mark.parametrize('name', ['files', 'api', 'static'])
@@ -53,15 +54,15 @@ def test_generation_exhausted(client, monkeypatch):
         return 'a'
 
     monkeypatch.setattr('yacut.models.secrets.choice', always_collide)
-    with pytest.raises(RuntimeError, match='Не удалось сгенерировать'):
-        get_unique_short_id()
+    with pytest.raises(ShortIDGenerationError, match='Не удалось сгенерировать'):
+        URLMap.get_unique_short_id()
     assert calls == MAX_GENERATION_ATTEMPTS * SHORT_ID_LENGTH
     assert URLMap.query.count() == 1
 
 
 def test_save_collision_rolls_back(client, monkeypatch):
     URLMap.create('https://example.com/first', 'aaaaaa')
-    monkeypatch.setattr('yacut.models.get_unique_short_id', lambda: 'aaaaaa')
+    monkeypatch.setattr('yacut.models.URLMap.get_unique_short_id', lambda: 'aaaaaa')
     with pytest.raises(ValueError, match='уже существует'):
         URLMap.create('https://example.com/second')
     assert db.session.is_active
@@ -213,7 +214,7 @@ def test_file_link_failure_continues(client, monkeypatch, failure):
             db.session.add(URLMap(original=original, short='pending'))
             errors = {
                 'validation': ValueError,
-                'generation': RuntimeError,
+                'generation': ShortIDGenerationError,
                 'database': SQLAlchemyError,
             }
             raise errors[failure]('Internal error details')
@@ -235,3 +236,21 @@ def test_file_link_failure_continues(client, monkeypatch, failure):
     }
     for item in items:
         assert f'http://localhost/{item.short}' in html
+
+
+@pytest.mark.parametrize('endpoint', ['/', '/api/id/'])
+def test_generation_error_response(client, monkeypatch, endpoint):
+    def fail():
+        raise ShortIDGenerationError('Не удалось сгенерировать ссылку.')
+
+    monkeypatch.setattr(URLMap, 'get_unique_short_id', fail)
+    if endpoint == '/':
+        response = client.post(endpoint, data={
+            'original_link': 'https://example.com'})
+        assert response.status_code == 200
+        assert 'Не удалось сгенерировать' in response.get_data(as_text=True)
+    else:
+        response = client.post(endpoint, json={'url': 'https://example.com'})
+        assert response.status_code == 503
+        assert 'Не удалось сгенерировать' in response.json['message']
+    assert URLMap.query.count() == 0

@@ -6,6 +6,7 @@ from urllib.parse import urlsplit
 from flask import url_for
 from sqlalchemy.exc import IntegrityError
 
+from .exceptions import ShortIDGenerationError
 from . import db
 from .constants import (
     ALPHABET, DUPLICATE_MESSAGE, INVALID_SHORT_MESSAGE,
@@ -27,24 +28,24 @@ def validate_original(original):
         raise ValueError('Указана некорректная ссылка')
 
 
-def get_unique_short_id(length=SHORT_ID_LENGTH):
-    """Generate an unused identifier of the requested length."""
-    if not 1 <= length <= MAX_SHORT_LENGTH:
-        raise ValueError('Недопустимая длина идентификатора')
-    for _ in range(MAX_GENERATION_ATTEMPTS):
-        short = ''.join(secrets.choice(ALPHABET) for _ in range(length))
-        if short not in RESERVED_IDS and URLMap.get(short) is None:
-            return short
-    raise RuntimeError(
-        'Не удалось сгенерировать уникальную короткую ссылку.'
-    )
-
-
 class URLMap(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     original = db.Column(db.Text, nullable=False)
     short = db.Column(db.String(MAX_SHORT_LENGTH), unique=True, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    @classmethod
+    def get_unique_short_id(cls, length=SHORT_ID_LENGTH):
+        """Generate an unused identifier of the requested length."""
+        if not 1 <= length <= MAX_SHORT_LENGTH:
+            raise ValueError('Недопустимая длина идентификатора')
+        for _ in range(MAX_GENERATION_ATTEMPTS):
+            short = ''.join(secrets.choice(ALPHABET) for _ in range(length))
+            if short not in RESERVED_IDS and cls.get(short) is None:
+                return short
+        raise ShortIDGenerationError(
+            'Не удалось сгенерировать уникальную короткую ссылку.'
+        )
 
     @staticmethod
     def get(short):
@@ -68,7 +69,7 @@ class URLMap(db.Model):
             if custom_id in RESERVED_IDS or cls.get(custom_id):
                 raise ValueError(DUPLICATE_MESSAGE)
         item = cls(original=original,
-                   short=custom_id or get_unique_short_id())
+                   short=custom_id or cls.get_unique_short_id())
         db.session.add(item)
         try:
             db.session.commit()
